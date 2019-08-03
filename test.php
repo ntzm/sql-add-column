@@ -5,16 +5,17 @@ declare(strict_types=1);
 use PhpMyAdmin\SqlParser\Parser;
 use PhpMyAdmin\SqlParser\Statements\InsertStatement;
 use PhpMyAdmin\SqlParser\Token;
+use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Symfony\Component\Finder\Finder;
 
 require __DIR__ . '/vendor/autoload.php';
 
-function format(string $query): string {
+function format(string $query, array $reservedTables): string {
     /** @var Token[] $tokens */
     $tokens = (new Parser($query))->list->tokens;
     $braceDepth = 0;
 
-    $parts = array_map(static function (Token $token) use (&$braceDepth): string {
+    $parts = array_map(static function (Token $token) use ($reservedTables, &$braceDepth): string {
         if ($token->token === '(') {
             ++$braceDepth;
         }
@@ -39,6 +40,10 @@ function format(string $query): string {
             return "{$token->token} ";
         }
 
+        if ($token->type === Token::TYPE_KEYWORD && in_array($token->token, $reservedTables, true)) {
+            return "{$token->token} ";
+        }
+
         return $token->token ?? '';
     }, $tokens);
 
@@ -47,7 +52,7 @@ function format(string $query): string {
     return implode("\n", $trimmedLines);
 }
 
-function addNewColumnToQuery(string $query, string $table, string $newColumn, string $default): string {
+function addNewColumnToQuery(string $query, string $table, string $newColumn, string $default, array $reservedTables): string {
     $statements = (new Parser($query))->statements;
     $formattedStatements = [];
 
@@ -65,7 +70,7 @@ function addNewColumnToQuery(string $query, string $table, string $newColumn, st
             $statement->into->columns[] = $newColumn;
         }
 
-        $formattedStatements[] = format($statement->build());
+        $formattedStatements[] = format($statement->build(), $reservedTables);
     }
 
     return implode(";\n\n", $formattedStatements) . ";\n";
@@ -76,11 +81,17 @@ $options = getopt('', [
     'column:',
     'default:',
     'dir:',
+    'reserved-tables:',
 ]);
 
-if (array_keys($options) !== ['table', 'column', 'default', 'dir']) {
+if (!isset($options['table'], $options['column'], $options['default'], $options['dir'])) {
     echo <<<HELP
-    Usage: php test.php --table users --column signed_up_at --default '"2019-01-01 00:00:00"' --dir fixtures/
+    Usage: php test.php
+        --table users
+        --column signed_up_at
+        --default '"2019-01-01 00:00:00"'
+        --dir fixtures/
+        [--reserved-tables events]
 
     HELP;
     exit(1);
@@ -88,16 +99,18 @@ if (array_keys($options) !== ['table', 'column', 'default', 'dir']) {
 
 try {
     $files = (new Finder())->in($options['dir'])->name('*.sql');
-} catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException $e) {
+} catch (DirectoryNotFoundException $e) {
     echo "Directory does not exist\n";
     exit(1);
 }
+
+$reservedTables = explode(',', $options['reserved-tables'] ?? '');
 
 /** @var \Symfony\Component\Finder\SplFileInfo $file */
 foreach ($files as $file) {
     $query = $file->getContents();
 
-    $result = addNewColumnToQuery($query, $options['table'], $options['column'], $options['default']);
+    $result = addNewColumnToQuery($query, $options['table'], $options['column'], $options['default'], $reservedTables);
 
     $file->openFile('w')->fwrite($result);
 }
