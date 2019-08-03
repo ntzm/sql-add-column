@@ -1,3 +1,5 @@
 INSERT INTO events (a)
 VALUES
-('b');
+('a'), -- dont-remove
+('b'), # dont-remove
+('c');
