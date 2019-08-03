@@ -86,7 +86,6 @@ $options = getopt('', [
     'default:',
     'dir:',
 ]);
-
 if (!isset($options['table'], $options['column'], $options['default'], $options['dir'])) {
     echo <<<HELP
     Usage: sql-add-column
@@ -100,7 +99,7 @@ if (!isset($options['table'], $options['column'], $options['default'], $options[
 }
 
 try {
-    $files = (new Finder())->in($options['dir'])->name('*.sql');
+    $files = (new Finder())->in(getcwd() . '/' . $options['dir'])->name('*.sql');
 } catch (DirectoryNotFoundException $e) {
     echo "Directory does not exist\n";
     exit(1);
