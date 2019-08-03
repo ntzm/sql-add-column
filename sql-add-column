@@ -89,13 +89,13 @@ $options = getopt('', [
 
 if (!isset($options['table'], $options['column'], $options['default'], $options['dir'])) {
     echo <<<HELP
-    Usage: sql-add-column
-        --table users
-        --column signed_up_at
-        --default '"2019-01-01 00:00:00"'
-        --dir fixtures/
+Usage: sql-add-column
+    --table users
+    --column signed_up_at
+    --default '"2019-01-01 00:00:00"'
+    --dir fixtures/
 
-    HELP;
+HELP;
     exit(1);
 }
 

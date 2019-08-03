@@ -4,6 +4,7 @@
         "sql-add-column"
     ],
     "require": {
+        "php": "^7.2",
         "phpmyadmin/sql-parser": "^5.0",
         "symfony/finder": "^4.0"
     }
