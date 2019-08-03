@@ -1,10 +1,7 @@
 {
-    "name": "nat/sql-refactor",
-    "authors": [
-        {
-            "name": "Nat Zimmermann",
-            "email": "nzimmermann@helical-levity.com"
-        }
+    "name": "ntzm/sql-add-column",
+    "bin": [
+        "sql-add-column"
     ],
     "require": {
         "phpmyadmin/sql-parser": "^5.0",

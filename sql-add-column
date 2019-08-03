@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 declare(strict_types=1);
@@ -8,13 +9,24 @@ use PhpMyAdmin\SqlParser\Token;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Symfony\Component\Finder\Finder;
 
-require __DIR__ . '/vendor/autoload.php';
+$autoloaderLocations = [
+    __DIR__ . '/vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+foreach ($autoloaderLocations as $autoloaderLocation) {
+    if (file_exists($autoloaderLocation)) {
+        require $autoloaderLocation;
+        break;
+    }
+}
 
 function addNewColumnToQuery(string $query, string $table, string $newColumn, string $default): string {
     $parser = new Parser($query);
     $statements = $parser->statements;
     /** @var Token[] $inputTokens */
     $inputTokens = $parser->list->tokens;
+    $inputTokenCount = count($inputTokens);
     $outputTokens = [];
 
     foreach ($statements as $statement) {
@@ -61,7 +73,7 @@ function addNewColumnToQuery(string $query, string $table, string $newColumn, st
         }
     }
 
-    for ($i = $end + 1; $i < count($inputTokens); ++$i) {
+    for ($i = $end + 1; $i < $inputTokenCount; ++$i) {
         $outputTokens[] = $inputTokens[$i]->token;
     }
 
@@ -77,7 +89,7 @@ $options = getopt('', [
 
 if (!isset($options['table'], $options['column'], $options['default'], $options['dir'])) {
     echo <<<HELP
-    Usage: php test.php
+    Usage: sql-add-column
         --table users
         --column signed_up_at
         --default '"2019-01-01 00:00:00"'
